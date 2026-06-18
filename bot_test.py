@@ -1,0 +1,658 @@
+
+
+import telebot
+from telebot import types
+import json
+import os
+
+TOKEN = "8607077799:AAFQN7KuuTCBkWtfoHx2ieYC83pKb9wsH2U"
+ADMIN_ID = 6351786994
+
+BKASH_NUMBER = "01781340116"
+COIN_RATE = 200
+
+ADMIN_CHANNEL = "@rayhan7280"
+DETAILS_CHANNEL = "@tguserbuydetails"
+DETAILS_CHANNEL_ID = -1004351617542
+START_IMAGE = "images/start.jpg"
+
+bot = telebot.TeleBot(TOKEN)
+
+DB_FILE = "data.json"
+
+user_state = {}
+buy_requests = {}
+
+def load_data():
+    if not os.path.exists(DB_FILE):
+        return {
+            "users": {},
+            "requests": {}
+        }
+
+    with open(DB_FILE, "r") as f:
+        return json.load(f)
+
+def save_data(data):
+    with open(DB_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+def get_user(uid):
+    data = load_data()
+
+    uid = str(uid)
+
+    if uid not in data["users"]:
+        data["users"][uid] = {
+            "balance": 0
+        }
+        save_data(data)
+    return data["users"][uid]
+
+def main_menu():
+    markup = types.ReplyKeyboardMarkup(
+        resize_keyboard=True
+    )
+
+    markup.row(
+        "💰 Balance",
+        "🛒 Buy Coin"
+    )
+
+    markup.row(
+        "🔄 Transfer",
+        "📊 Rate"
+    )
+
+    markup.row(
+        "❓ Help"
+    )
+
+    markup.row(
+        "📦 TG Service"
+    )
+
+    return markup
+
+   
+@bot.message_handler(commands=["start"])
+def start(message):
+
+    if message.text == "/start admin" and message.from_user.id == ADMIN_ID:
+        get_user(message.from_user.id)
+
+        bot.send_message(
+            message.chat.id,
+            "👑 Admin Panel",
+            reply_markup=main_menu()
+        )
+        return
+
+    markup = types.InlineKeyboardMarkup()
+
+    btn1 = types.InlineKeyboardButton(
+        "📢 Admin Channel",
+        url="https://t.me/rayhan7280"
+    )
+
+    btn2 = types.InlineKeyboardButton(
+        "📋 Order Details Channel",
+        url="https://t.me/tguserbuydetails"
+    )
+
+    btn3 = types.InlineKeyboardButton(
+        "✅ Joined",
+        callback_data="check_join"
+    )
+
+    markup.add(btn1)
+    markup.add(btn2)
+    markup.add(btn3)
+
+    with open(START_IMAGE, "rb") as photo:
+        bot.send_photo(
+            message.chat.id,
+            photo,
+            caption="আগে নিচের থাকা চ্যানেলগুলো Join হন\n\nতারপর Joined বাটনে ক্লিক করুন।",
+            reply_markup=markup
+        )
+
+
+@bot.message_handler(func=lambda m: m.text == "💰 Balance")
+def balance(message):
+    user = get_user(message.from_user.id)
+
+    bot.send_message(
+        message.chat.id,
+        f"💰 Your Balance: {user['balance']} Coin"
+    )
+
+
+@bot.message_handler(func=lambda m: m.text == "📊 Rate")
+def rate(message):
+
+    bot.send_message(
+        message.chat.id,
+        "📊 Rate List\n\n"
+        "1 View = 1 Coin\n"
+        "1 Review = 3 Coin\n"
+        "1 User = 5 Coin\n\n"
+        f"{COIN_RATE} Coin = 1 Taka"
+    )
+
+
+@bot.message_handler(func=lambda m: m.text == "❓ Help")
+def help_menu(message):
+
+    bot.send_message(
+        message.chat.id,
+        f"👨‍💻 Admin ID:\n{ADMIN_ID}"
+    )
+
+
+@bot.message_handler(func=lambda m: m.text == "📦 TG Service")
+def tg_service(message):
+
+    markup = types.ReplyKeyboardMarkup(
+        resize_keyboard=True
+    )
+
+    markup.row("👁 Order View")
+    markup.row("👥 Order User")
+    markup.row("❤️ Order Reaction")
+    markup.row("🔙 Back")
+
+    bot.send_message(
+        message.chat.id,
+        "📦 TG Service Menu",
+        reply_markup=markup
+    )
+
+
+@bot.message_handler(func=lambda m: m.text == "👁 Order View")
+def order_view(message):
+
+    user_state[message.from_user.id] = {
+        "step": "view_amount"
+    }
+
+    bot.send_message(
+        message.chat.id,
+        "কত View Order করতে চান?"
+    )
+
+def order_user(message):
+    bot.send_message(
+        message.chat.id,
+        "কত User Order করতে চান?"
+    )
+
+@bot.message_handler(func=lambda m: m.text == "👥 Order User")
+def order_user(message):
+
+    user_state[message.from_user.id] = {
+        "step": "user_amount"
+    }
+
+    bot.send_message(
+        message.chat.id,
+        "কত User Order করতে চান?"
+    )
+
+@bot.message_handler(func=lambda m: m.text == "❤️ Order Reaction")
+def order_reaction(message):
+
+    user_state[message.from_user.id] = {
+        "step": "reaction_amount"
+    }
+
+    bot.send_message(
+        message.chat.id,
+        "কত Reaction Order করতে চান?"
+    )
+
+@bot.message_handler(func=lambda m: m.text == "🔙 Back")
+def back_menu(message):
+    bot.send_message(
+        message.chat.id,
+        "🏠 Main Menu",
+        reply_markup=main_menu()
+    )
+
+
+@bot.message_handler(func=lambda m: m.text == "🛒 Buy Coin")
+def buy_coin(message):
+
+    user_state[message.from_user.id] = {
+        "step": "buy_amount"
+    }
+
+    bot.send_message(
+        message.chat.id,
+        "🪙 কত Coin কিনতে চান?\n\nশুধু সংখ্যা লিখুন।"
+    )
+
+
+@bot.message_handler(func=lambda m: m.text == "🔄 Transfer")
+def transfer(message):
+
+    user_state[message.from_user.id] = {
+        "step": "transfer_user"
+    }
+
+    bot.send_message(
+        message.chat.id,
+        "👤 Receiver User ID পাঠান"
+    )
+@bot.message_handler(func=lambda m: True)
+def all_messages(message):
+
+    uid = message.from_user.id
+
+    if uid not in user_state:
+        return
+
+    state = user_state[uid]
+
+    # TRANSFER USER ID
+
+    if state["step"] == "transfer_user":
+
+        if not message.text.isdigit():
+            bot.send_message(
+                message.chat.id,
+                "❌ Valid User ID দিন"
+            )
+            return
+
+        user_state[uid] = {
+            "step": "transfer_amount",
+            "receiver": int(message.text)
+        }
+
+        bot.send_message(
+            message.chat.id,
+            "🪙 কত Coin Transfer করবেন?"
+        )
+
+        return
+
+    # TRANSFER AMOUNT
+
+    if state["step"] == "transfer_amount":
+
+        if not message.text.isdigit():
+            bot.send_message(
+                message.chat.id,
+                "❌ শুধু সংখ্যা লিখুন"
+            )
+            return
+
+        amount = int(message.text)
+
+        sender = get_user(uid)
+
+        if sender["balance"] < amount:
+            bot.send_message(
+                message.chat.id,
+                "❌ Balance যথেষ্ট নয়"
+            )
+
+            del user_state[uid]
+            return
+
+        user_state[uid] = {
+            "step": "transfer_ref",
+            "receiver": state["receiver"],
+            "amount": amount
+        }
+
+        bot.send_message(
+            message.chat.id,
+            "📝 Ref লিখুন\nনা চাইলে - লিখুন"
+        )
+
+        return
+
+    # TRANSFER REF
+
+    if state["step"] == "transfer_ref":
+
+        receiver = state["receiver"]
+        amount = state["amount"]
+        ref = message.text
+
+        data = load_data()
+
+        sender_id = str(uid)
+        receiver_id = str(receiver)
+
+        if receiver_id not in data["users"]:
+            data["users"][receiver_id] = {
+                "balance": 0
+            }
+
+        data["users"][sender_id]["balance"] -= amount
+        data["users"][receiver_id]["balance"] += amount
+
+        save_data(data)
+
+        try:
+            bot.send_message(
+                receiver,
+                f"💸 Balance Received\n\n"
+                f"👤 From: {uid}\n"
+                f"🪙 Coin: {amount}\n"
+                f"📝 Ref: {ref}"
+            )
+        except:
+            pass
+
+        bot.send_message(
+            message.chat.id,
+            f"✅ Transfer Successful\n\n"
+            f"👤 To: {receiver}\n"
+            f"🪙 Coin: {amount}\n"
+            f"📝 Ref: {ref}"
+        )
+
+        del user_state[uid]
+
+        return
+# BUY COIN AMOUNT
+
+    if state["step"] == "buy_amount":
+
+        if not message.text.isdigit():
+            bot.send_message(
+                message.chat.id,
+                "❌ শুধু সংখ্যা লিখুন"
+            )
+            return
+
+        coin_amount = int(message.text)
+
+        taka = coin_amount / COIN_RATE
+
+        user_state[uid] = {
+            "step": "trx_id",
+            "coin_amount": coin_amount
+        }
+
+        bot.send_message(
+            message.chat.id,
+            f"🪙 Coin: {coin_amount}\n"
+            f"💵 Pay: {taka:.2f} Taka\n\n"
+            f"📱 bKash: {BKASH_NUMBER}\n\n"
+            "Payment করার পর Transaction ID পাঠান"
+        )
+
+        return
+
+    # TRX ID
+
+    if state["step"] == "trx_id":
+
+        trx = message.text
+        coin_amount = state["coin_amount"]
+
+        buy_requests[str(uid)] = {
+            "user_id": uid,
+            "coin": coin_amount,
+            "trx": trx
+        }
+
+        markup = types.InlineKeyboardMarkup()
+
+        markup.add(
+            types.InlineKeyboardButton(
+                "✅ Approve",
+                callback_data=f"approve:{uid}"
+            ),
+            types.InlineKeyboardButton(
+                "❌ Reject",
+                callback_data=f"reject:{uid}"
+            )
+        )
+
+        bot.send_message(
+            ADMIN_ID,
+            f"🛒 New Order\n\n"
+            f"👤 User: {uid}\n"
+            f"🪙 Coin: {coin_amount}\n"
+            f"🧾 TRX: {trx}",
+            reply_markup=markup
+        )
+
+        bot.send_message(
+            message.chat.id,
+            "✅ Request Sent To Admin"
+        )
+
+        del user_state[uid]
+
+        return
+
+
+# VIEW ORDER
+
+    if state["step"] == "view_amount":
+
+        if not message.text.isdigit():
+            bot.send_message(message.chat.id, "❌ শুধু সংখ্যা লিখুন")
+            return
+
+        amount = int(message.text)
+        cost = amount
+
+        user = get_user(uid)
+
+        if user["balance"] < cost:
+            bot.send_message(
+                message.chat.id,
+                "❌ আপনার কাছে পর্যাপ্ত Balance নেই"
+            )
+            del user_state[uid]
+            return
+
+        user_state[uid] = {
+            "step": "view_link",
+            "amount": amount,
+            "cost": cost
+        }
+
+        bot.send_message(
+            message.chat.id,
+            "🔗 Post Link পাঠান"
+        )
+
+        return
+
+    if state["step"] == "view_link":
+
+        link = message.text
+
+        db = load_data()
+        db["users"][str(uid)]["balance"] -= state["cost"]
+        save_data(db)
+
+        bot.send_message(
+            ADMIN_ID,
+            f"👁 VIEW ORDER\n\n"
+            f"User: {uid}\n"
+            f"View: {state['amount']}\n"
+            f"Coin: {state['cost']}\n"
+            f"Link: {link}"
+        )
+
+        bot.send_message(
+            message.chat.id,
+            "✅ View Order Submitted"
+        )
+
+        del user_state[uid]
+
+        return
+
+
+
+# USER ORDER
+
+    if state["step"] == "user_amount":
+
+        if not message.text.isdigit():
+            bot.send_message(message.chat.id, "❌ শুধু সংখ্যা লিখুন")
+            return
+
+        amount = int(message.text)
+
+        user_state[uid] = {
+            "step": "user_link",
+            "amount": amount
+        }
+
+        bot.send_message(
+            message.chat.id,
+            "🔗 Group/Channel Link পাঠান"
+        )
+
+        return
+
+    if state["step"] == "user_link":
+
+        link = message.text
+
+        bot.send_message(
+            ADMIN_ID,
+            f"👥 USER ORDER\n\n"
+            f"User: {uid}\n"
+            f"User Count: {state['amount']}\n"
+            f"Link: {link}"
+        )
+
+        bot.send_message(
+            message.chat.id,
+            "✅ User Order Submitted"
+        )
+
+        del user_state[uid]
+
+        return
+
+    # REACTION ORDER
+
+    if state["step"] == "reaction_amount":
+
+        if not message.text.isdigit():
+            bot.send_message(message.chat.id, "❌ শুধু সংখ্যা লিখুন")
+            return
+
+        amount = int(message.text)
+
+        user_state[uid] = {
+            "step": "reaction_link",
+            "amount": amount
+        }
+
+        bot.send_message(
+            message.chat.id,
+            "🔗 Post Link পাঠান"
+        )
+
+        return
+
+    if state["step"] == "reaction_link":
+
+        link = message.text
+
+        bot.send_message(
+            ADMIN_ID,
+            f"❤️ REACTION ORDER\n\n"
+            f"User: {uid}\n"
+            f"Reaction: {state['amount']}\n"
+            f"Link: {link}"
+        )
+
+        bot.send_message(
+            message.chat.id,
+            "✅ Reaction Order Submitted"
+        )
+
+        del user_state[uid]
+
+        return
+
+
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_handler(call):
+
+    data = call.data
+
+    if data.startswith("approve:"):
+
+        uid = data.split(":")[1]
+
+        if uid not in buy_requests:
+            return
+
+        req = buy_requests[uid]
+
+        db = load_data()
+
+        uid_str = str(req["user_id"])
+
+        if uid_str not in db["users"]:
+            db["users"][uid_str] = {
+                "balance": 0
+            }
+
+        db["users"][uid_str]["balance"] += req["coin"]
+
+        save_data(db)
+
+        bot.send_message(
+            req["user_id"],
+            f"✅ Order Approved\n\n"
+            f"🪙 Added: {req['coin']} Coin"
+        )
+
+        bot.edit_message_text(
+            f"✅ Approved\nUser: {uid}",
+            call.message.chat.id,
+            call.message.message_id
+        )
+
+        del buy_requests[uid]
+
+    elif data.startswith("reject:"):
+
+        uid = data.split(":")[1]
+
+        if uid not in buy_requests:
+            return
+
+        req = buy_requests[uid]
+
+        bot.send_message(
+            req["user_id"],
+            "❌ Order Rejected"
+        )
+
+        bot.edit_message_text(
+            f"❌ Rejected\nUser: {uid}",
+            call.message.chat.id,
+            call.message.message_id
+        )
+
+        del buy_requests[uid]
+
+
+bot.send_message(
+    DETAILS_CHANNEL_ID,
+    "✅ TEST MESSAGE"
+)
+
+print("Bot Started...")
+bot.infinity_polling()
+

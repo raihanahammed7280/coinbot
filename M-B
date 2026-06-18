@@ -1,0 +1,84 @@
+import telebot
+from telebot import types
+import json
+import os
+
+TOKEN = "8607077799:AAFQN7KuuTCBkWtfoHx2ieYC83pKb9wsH2U"
+ADMIN_ID = 6351786994
+
+BKASH_NUMBER = "01781340116"
+COIN_RATE = 200
+
+bot = telebot.TeleBot(TOKEN)
+
+DB_FILE = "data.json"
+
+def load_data():
+    if not os.path.exists(DB_FILE):
+        return {"users": {}}
+
+    with open(DB_FILE, "r") as f:
+        return json.load(f)
+
+def save_data(data):
+    with open(DB_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+def get_user(uid):
+    data = load_data()
+
+    uid = str(uid)
+
+    if uid not in data["users"]:
+        data["users"][uid] = {"balance": 0}
+        save_data(data)
+
+    return data["users"][uid]
+
+def main_menu():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row("💰 Balance", "🛒 Buy Coin")
+    markup.row("🔄 Transfer", "📊 Rate")
+    return markup
+
+@bot.message_handler(commands=["start"])
+def start(message):
+    get_user(message.from_user.id)
+
+    bot.send_message(
+        message.chat.id,
+        "Welcome To Coin Bot",
+        reply_markup=main_menu()
+    )
+
+@bot.message_handler(func=lambda m: m.text == "💰 Balance")
+def balance(message):
+    user = get_user(message.from_user.id)
+    bot.send_message(
+        message.chat.id,
+        f"💰 Your Balance: {user['balance']} Coin"
+    )
+
+@bot.message_handler(func=lambda m: m.text == "📊 Rate")
+def rate(message):
+    bot.send_message(
+        message.chat.id,
+        f"📊 Rate:\n{COIN_RATE} Coin = 1 Taka"
+    )
+
+@bot.message_handler(func=lambda m: m.text == "🛒 Buy Coin")
+def buy_coin(message):
+    bot.send_message(
+        message.chat.id,
+        f"📱 bKash Number:\n{BKASH_NUMBER}"
+    )
+
+@bot.message_handler(func=lambda m: m.text == "🔄 Transfer")
+def transfer(message):
+    bot.send_message(
+        message.chat.id,
+        "Transfer system coming soon."
+    )
+
+print("Bot Started...")
+bot.infinity_polling()
