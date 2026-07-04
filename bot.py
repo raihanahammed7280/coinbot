@@ -2,6 +2,7 @@
 import telebot
 from telebot import types
 import json
+import time
 import os
 
 TOKEN = "8607077799:AAFQN7KuuTCBkWtfoHx2ieYC83pKb9wsH2U"
@@ -681,5 +682,27 @@ def callback_handler(call):
         del buy_requests[uid]
 
 
+# Notify all users that bot is online
+try:
+    db = load_data()
+
+    for uid in db["users"]:
+        try:
+            bot.send_message(
+                int(uid),
+                "🟢 বট এখন অনলাইন হয়েছে।"
+            )
+        except:
+            pass
+
+except Exception as e:
+    print("Online notification error:", e)
+
 print("Bot Started...")
-bot.infinity_polling()
+
+while True:
+    try:
+        bot.infinity_polling(timeout=30, long_polling_timeout=30)
+    except Exception as e:
+        print("Connection lost:", e)
+        time.sleep(5)
