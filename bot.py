@@ -624,7 +624,54 @@ def callback_handler(call):
 
     data = call.data
 
-    if data.startswith("approve:"):
+    # ==========================
+    # JOIN CHECK
+    # ==========================
+    if data == "check_join":
+
+        user_id = call.from_user.id
+
+        try:
+            admin = bot.get_chat_member(ADMIN_CHANNEL, user_id)
+            details = bot.get_chat_member(DETAILS_CHANNEL, user_id)
+
+            ok = ["member", "administrator", "creator"]
+
+            if admin.status in ok and details.status in ok:
+
+                get_user(user_id)
+
+                bot.delete_message(
+                    call.message.chat.id,
+                    call.message.message_id
+                )
+
+                bot.send_message(
+                    call.message.chat.id,
+                    "✅ Verification Successful!",
+                    reply_markup=main_menu()
+                )
+
+            else:
+
+                bot.answer_callback_query(
+                    call.id,
+                    "❌ আগে সব চ্যানেলে Join করুন!",
+                    show_alert=True
+                )
+
+        except Exception as e:
+
+            bot.answer_callback_query(
+                call.id,
+                f"Error: {e}",
+                show_alert=True
+            )
+
+    # ==========================
+    # APPROVE
+    # ==========================
+    elif data.startswith("approve:"):
 
         uid = data.split(":")[1]
 
@@ -648,12 +695,36 @@ def callback_handler(call):
 
         bot.send_message(
             req["user_id"],
-            f"✅ Order Approved\n\n"
-            f"🪙 Added: {req['coin']} Coin"
+            f"✅ Order Approved\n\n🪙 Added: {req['coin']} Coin"
         )
 
         bot.edit_message_text(
             f"✅ Approved\nUser: {uid}",
+            call.message.chat.id,
+            call.message.message_id
+        )
+
+        del buy_requests[uid]
+
+    # ==========================
+    # REJECT
+    # ==========================
+    elif data.startswith("reject:"):
+
+        uid = data.split(":")[1]
+
+        if uid not in buy_requests:
+            return
+
+        req = buy_requests[uid]
+
+        bot.send_message(
+            req["user_id"],
+            "❌ Order Rejected"
+        )
+
+        bot.edit_message_text(
+            f"❌ Rejected\nUser: {uid}",
             call.message.chat.id,
             call.message.message_id
         )
@@ -701,9 +772,10 @@ except Exception as e:
 
 print("Bot Started...")
 
-while True:
-    try:
-        bot.infinity_polling(timeout=30, long_polling_timeout=30)
-    except Exception as e:
-        print("Connection lost:", e)
-        time.sleep(5)
+print("Bot Started...")
+
+bot.infinity_polling(
+    skip_pending=True,
+    timeout=60,
+    long_polling_timeout=60
+)
