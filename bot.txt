@@ -646,11 +646,19 @@ def callback_handler(call):
                     call.message.message_id
                 )
 
-                bot.send_message(
-                    call.message.chat.id,
-                    "✅ Verification Successful!",
-                    reply_markup=main_menu()
-                )
+                try:
+    bot.delete_message(
+        call.message.chat.id,
+        call.message.message_id
+    )
+except:
+    pass
+
+bot.send_message(
+    call.message.chat.id,
+    "✅ Verification Successful!",
+    reply_markup=main_menu()
+)
 
             else:
 
@@ -772,9 +780,10 @@ except Exception as e:
 
 print("Bot Started...")
 
-while True:
-    try:
-        bot.infinity_polling(timeout=30, long_polling_timeout=30)
-    except Exception as e:
-        print("Connection lost:", e)
-        time.sleep(5)
+print("Bot Started...")
+
+bot.infinity_polling(
+    skip_pending=True,
+    timeout=60,
+    long_polling_timeout=60
+)

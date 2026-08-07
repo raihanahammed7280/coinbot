@@ -641,10 +641,13 @@ def callback_handler(call):
 
                 get_user(user_id)
 
-                bot.delete_message(
-                    call.message.chat.id,
-                    call.message.message_id
-                )
+                try:
+                    bot.delete_message(
+                        call.message.chat.id,
+                        call.message.message_id
+                    )
+                except:
+                    pass
 
                 bot.send_message(
                     call.message.chat.id,
