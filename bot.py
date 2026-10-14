@@ -5,14 +5,14 @@ import json
 import time
 import os
 
-TOKEN = "8607077799:AAFcyYQCvt5wamL57VS44_63a7mT_u1VlWM"
-ADMIN_ID = 6351786994
+TOKEN = "8249747640:AAF6rAkY2Y3ckFjecf-dwmOz_o2HkUtpWTs"
+ADMIN_ID = 8586973896
 
 BKASH_NUMBER = "01781340116"
 COIN_RATE = 200
 
-ADMIN_CHANNEL = "@rayhan7280"
-DETAILS_CHANNEL = "@tguserbuydetails"
+ADMIN_CHANNEL = "@xgRayhan"
+DETAILS_CHANNEL = "@cheapsmmbdgroup"
 DETAILS_CHANNEL_ID = -1004351617542
 START_IMAGE = "images/start.jpg"
 
@@ -92,12 +92,12 @@ def start(message):
 
     btn1 = types.InlineKeyboardButton(
         "📢 Admin Channel",
-        url="https://t.me/rayhan7280"
+        url="https://t.me/xgRayhan"
     )
 
     btn2 = types.InlineKeyboardButton(
         "📋 Order Details Channel",
-        url="https://t.me/tguserbuydetails"
+        url="https://t.me/cheapsmmbdgroup"
     )
 
     btn3 = types.InlineKeyboardButton(
