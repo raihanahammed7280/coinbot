@@ -12,8 +12,8 @@ BKASH_NUMBER = "01781340116"
 COIN_RATE = 200
 
 ADMIN_CHANNEL = "@xgRayhan"
-DETAILS_CHANNEL = "@cheapsmmbdgroup"
-DETAILS_CHANNEL_ID = -1004351617542
+DETAILS_CHANNEL = "@cheapsmmbdsupport"
+DETAILS_CHANNEL_ID = -1004435315142
 START_IMAGE = "images/start.jpg"
 
 bot = telebot.TeleBot(TOKEN)
@@ -97,7 +97,7 @@ def start(message):
 
     btn2 = types.InlineKeyboardButton(
         "📋 Order Details Channel",
-        url="https://t.me/cheapsmmbdgroup"
+        url="https://t.me/cheapsmmbdsupport"
     )
 
     btn3 = types.InlineKeyboardButton(
